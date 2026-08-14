@@ -1,0 +1,49 @@
+완성본 샘플
+https://edu-connect--hackers-edu-connect.asia-southeast1.hosted.app/
+
+파이어베이스 콘솔
+https://console.firebase.google.com/
+
+리엑트 프로젝트 생성
+https://react.dev/
+
+npm create vite@latest sns-service -- --template react
+
+폴더 Hackers_SNS
+
+코드 정리
+1. App.jsx
+2. Index.css
+3. App.css
+
+
+깃허브 저장소 생성
+https://github.com/
+
+git init
+git add .
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/alikerock/Hackers_SNS.git
+git push -u origin main
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

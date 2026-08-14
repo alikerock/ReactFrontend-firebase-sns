@@ -1,0 +1,12 @@
+1. 코드 생성용 프롬프트 생성용 프롬프트
+
+디자인을 참조해서 figma make에 코드 생성을 의뢰할 프롬프트를 제안해줘. 
+
+이때 react(vite)앱을 javascript 기반으로 생성하도록 프롬프트 생성
+
+- 공통 Layout과 Outlet 활용
+- MUI Theme & sx 스타일링
+- createTheme, ThemeProvider, sx prop 활용
+
+
+

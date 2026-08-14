@@ -1,0 +1,11 @@
+1. 프롬프트 작성
+2. React 코드 생성
+3. 새 레포 연결
+ReactFrontend-firebase-sns
+
+
+git clone https://github.com/alikerock/ReactFrontend-firebase-sns
+
+npm install firebase
+
+npm run dev
