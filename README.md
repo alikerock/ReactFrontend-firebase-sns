@@ -105,9 +105,9 @@ SNS 기능 구현
 
 | 차시   | 학습 내용                           | 소스                                                                                           |
 | ---- | ------------------------------- | -------------------------------------------------------------------------------------------- |
-| 01차시 | 프론트엔드 서비스와 Firebase 이해          | Release 준비                                                                                   |
-| 02차시 | React 프로젝트와 개발 환경 구성            | Release 준비                                                                                   |
-| 03차시 | Figma 디자인 분석과 화면 구조 설계          | Release 준비                                                                                   |
+| 01차시 | 프론트엔드 서비스와 Firebase 이해          |                                                                                    |
+| 02차시 | React 프로젝트와 개발 환경 구성            |                                                                                    |
+| 03차시 | Figma 디자인 분석과 화면 구조 설계          |                                                                                    |
 | 04차시 | Figma Make를 활용한 React UI 구현     | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/lesson-04) |
 | 05차시 | AI 생성 React 코드 분석과 프로젝트 구조 정리   | Release 준비                                                                                   |
 | 06차시 | Firebase 프로젝트 생성과 React 연동      | Release 준비                                                                                   |
