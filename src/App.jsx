@@ -1,17 +1,19 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import theme from './theme';
-import Layout from './components/Layout';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import Home from './pages/Home';
-import MyPosts from './pages/MyPosts';
-import PostDetail from './pages/PostDetail';
-import CreatePost from './pages/CreatePost';
-import EditPost from './pages/EditPost';
-import Profile from './pages/Profile';
-import ProfileEdit from './pages/ProfileEdit';
-import NotFound from './pages/NotFound';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider, CssBaseline } from "@mui/material";
+import theme from "./theme";
+import Layout from "./components/Layout";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Home from "./pages/Home";
+import MyPosts from "./pages/MyPosts";
+import PostDetail from "./pages/PostDetail";
+import CreatePost from "./pages/CreatePost";
+import EditPost from "./pages/EditPost";
+import Profile from "./pages/Profile";
+import ProfileEdit from "./pages/ProfileEdit";
+import NotFound from "./pages/NotFound";
+import { firebase } from "../firebase";
+console.log(firebase);
 
 export default function App() {
   return (
