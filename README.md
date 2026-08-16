@@ -110,21 +110,21 @@ SNS 기능 구현
 | 03차시 | Figma 디자인 분석과 화면 구조 설계          |                                                                                    |
 | 04차시 | Figma Make를 활용한 React UI 구현     | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/lesson-04) |
 | 05차시 | AI 생성 React 코드 분석과 프로젝트 구조 정리   | Release 준비                                                                                   |
-| 06차시 | Firebase 프로젝트 생성과 React 연동      | Release 준비                                                                                   |
-| 07차시 | Firebase Authentication 회원가입 구현 | Release 준비                                                                                   |
-| 08차시 | 로그인·로그아웃과 인증 상태 관리              | Release 준비                                                                                   |
-| 09차시 | 사용자 프로필 데이터와 Firestore 연동       | Release 준비                                                                                   |
-| 10차시 | Firestore 데이터 구조와 게시글 등록        | Release 준비                                                                                   |
-| 11차시 | 게시글 목록 조회와 데이터 렌더링              | Release 준비                                                                                   |
-| 12차시 | 게시글 상세 조회와 동적 라우팅               | Release 준비                                                                                   |
-| 13차시 | 게시글 수정·삭제와 CRUD 완성              | Release 준비                                                                                   |
-| 14차시 | Firebase Storage 이미지 업로드        | Release 준비                                                                                   |
-| 15차시 | 사용자별 게시글과 마이페이지 구현              | Release 준비                                                                                   |
-| 16차시 | 좋아요 기능 구현                       | Release 준비                                                                                   |
-| 17차시 | 댓글 기능 구현                        | Release 준비                                                                                   |
-| 18차시 | 예외 처리와 사용자 피드백 UI 개선            | Release 준비                                                                                   |
-| 19차시 | 테스트 및 코드 품질 검증                  | Release 준비                                                                                   |
-| 20차시 | 최종 검수와 Firebase Hosting 배포      | Release 준비                                                                                   |
+| 06차시 | 이메일 인증과 로그인 상태 관리      | Release 준비                                                                                   |
+| 07차시 | Google 소셜 로그인과 사용자 정보 | Release 준비                                                                                   |
+| 08차시 | Firestore 구조 이해와 데이터 설계              | Release 준비                                                                                   |
+| 09차시 | 게시글 작성 및 Firestore 저장       | Release 준비                                                                                   |
+| 10차시 | 게시글 목록·상세 및 실시간 반영        | Release 준비                                                                                   |
+| 11차시 | 권한까지 챙기는 수정·삭제 만들기              | Release 준비                                                                                   |
+| 12차시 | 게시글 목록 페이지네이션 구현               | Release 준비                                                                                   |
+| 13차시 | Firebase Storage 이미지 업로드              | Release 준비                                                                                   |
+| 14차시 | 게시글 이미지 출력·교체·삭제하기        | Release 준비                                                                                   |
+| 15차시 | 프로필과 내 게시글 구현              | Release 준비                                                                                   |
+| 16차시 | 댓글 작성·삭제 및 실시간 반영                       | Release 준비                                                                                   |
+| 17차시 | 토글과 개수 표시로 좋아요 구현하기                        | Release 준비                                                                                   |
+| 18차시 | Firebase 보안 규칙과 사용자 경험 개선            | Release 준비                                                                                   |
+| 19차시 | 배포·리팩토링 및 포트폴리오 정리                  | Release 준비                                                                                   |
+| 20차시 | GitHub Copilot과 함께 SNS 기능 확장하기      | Release 준비                                                                                   |
 
 ---
 
