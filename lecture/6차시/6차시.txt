@@ -1,2 +1,29 @@
 이메일 인증과 로그인 상태 관리
 --------------------------------
+https://github.com/alikerock/ReactFrontend-firebase-sns
+
+npm run dev
+
+http://localhost:8443/
+
+http://localhost:8443/login
+http://localhost:8443/signup
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

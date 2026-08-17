@@ -10,3 +10,20 @@ React와 Firebase Authentication을 사용하고 있다.
 * Firebase 오류 처리
 * 처리 중 버튼 중복 클릭 방지
 * 기존 컴포넌트 구조와 스타일 최대한 유지
+
+-------------------
+sidebar에서 로그아웃 버튼을 클릭하면 signout 되도록 구현
+
+
+
+
+
+
+
+
+
+
+
+
+
+
