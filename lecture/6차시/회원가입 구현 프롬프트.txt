@@ -1,0 +1,12 @@
+React와 Firebase Authentication을 사용하고 있다.
+
+현재 회원가입 페이지의 기존 MUI 디자인은 변경하지 말고 이메일과 비밀번호를 이용한 Firebase 회원가입 기능을 추가해줘
+
+요구사항:
+
+* createUserWithEmailAndPassword 사용
+* 입력값 검증
+* 회원가입 성공 시 로그인 페이지로 이동
+* Firebase 오류 처리
+* 처리 중 버튼 중복 클릭 방지
+* 기존 컴포넌트 구조와 스타일 최대한 유지

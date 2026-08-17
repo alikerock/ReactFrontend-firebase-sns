@@ -1,0 +1,15 @@
+인증 상태 관리 프롬프트
+
+현재 React + Firebase 프로젝트에서 로그인 상태를 여러 컴포넌트에서 사용하려고 한다.
+
+AuthContext를 생성하여 Firebase Authentication의 로그인 상태를 관리하도록 리팩토링해줘.
+
+요구사항:
+
+* onAuthStateChanged 사용
+* user 상태 관리
+* loading 상태 관리
+* Provider 구성
+* Header에서 로그인 여부 확인 가능
+* 로그아웃 기능 제공
+* 기존 UI 디자인은 변경하지 않음

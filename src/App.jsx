@@ -12,32 +12,33 @@ import EditPost from "./pages/EditPost";
 import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
 import NotFound from "./pages/NotFound";
-import { firebase } from "../firebase";
-console.log(firebase);
+import { AuthProvider } from "./contexts/AuthContext";
 
 export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <BrowserRouter>
-        <Routes>
-          {/* Auth pages - no layout */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Auth pages - no layout */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
 
-          {/* App pages - with layout */}
-          <Route element={<Layout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/my-posts" element={<MyPosts />} />
-            <Route path="/posts/create" element={<CreatePost />} />
-            <Route path="/posts/:id" element={<PostDetail />} />
-            <Route path="/posts/:id/edit" element={<EditPost />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/profile/edit" element={<ProfileEdit />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+            {/* App pages - with layout */}
+            <Route element={<Layout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/my-posts" element={<MyPosts />} />
+              <Route path="/posts/create" element={<CreatePost />} />
+              <Route path="/posts/:id" element={<PostDetail />} />
+              <Route path="/posts/:id/edit" element={<EditPost />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/edit" element={<ProfileEdit />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
