@@ -111,7 +111,7 @@ SNS 기능 구현
 | 04차시 | Figma Make를 활용한 React UI 구현            | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/lesson-04) |
 | 05차시 | AI 생성 React 코드 분석과 프로젝트 구조 정리 | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/lesson-05) |
 | 06차시 | 이메일 인증과 로그인 상태 관리               | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/lesson-06) |
-| 07차시 | Google 소셜 로그인과 사용자 정보             | Release 준비                                                                                      |
+| 07차시 | Google 소셜 로그인과 사용자 정보             | 📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/lesson-07)  |
 | 08차시 | Firestore 구조 이해와 데이터 설계            | Release 준비                                                                                      |
 | 09차시 | 게시글 작성 및 Firestore 저장                | Release 준비                                                                                      |
 | 10차시 | 게시글 목록·상세 및 실시간 반영              | Release 준비                                                                                      |
