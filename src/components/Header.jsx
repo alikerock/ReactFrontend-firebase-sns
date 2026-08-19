@@ -7,6 +7,7 @@ import {
   IconButton,
   Avatar,
   Box,
+  Button,
   useMediaQuery,
 } from "@mui/material";
 import { Terminal, Search, NotificationsNone, Menu as MenuIcon } from "@mui/icons-material";
@@ -19,7 +20,7 @@ export default function Header({ onMenuClick }) {
   const isMobile = useMediaQuery(theme => theme.breakpoints.down("md"));
   const { user, loading } = useAuth();
 
-  const initials = user?.email ? user.email.charAt(0).toUpperCase() : "U";
+  const initials = (user?.displayName || user?.email || "U").charAt(0).toUpperCase();
 
   return (
     <AppBar position="fixed" sx={{ zIndex: theme => theme.zIndex.drawer + 1 }}>
@@ -83,20 +84,31 @@ export default function Header({ onMenuClick }) {
           <IconButton color="inherit" size="small">
             <NotificationsNone />
           </IconButton>
-          <Avatar
-            sx={{
-              width: 36,
-              height: 36,
-              bgcolor: "#e0e0e0",
-              color: "#666",
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-            onClick={() => navigate("/profile")}
-          >
-            {loading ? "?" : initials}
-          </Avatar>
+          {!loading && user ? (
+            <Avatar
+              sx={{
+                width: 36,
+                height: 36,
+                bgcolor: "#e0e0e0",
+                color: "#666",
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+              onClick={() => navigate("/profile")}
+            >
+              {initials}
+            </Avatar>
+          ) : !loading ? (
+            <>
+              <Button color="inherit" onClick={() => navigate("/login")}>
+                로그인
+              </Button>
+              <Button color="inherit" onClick={() => navigate("/signup")}>
+                회원가입
+              </Button>
+            </>
+          ) : null}
         </Box>
       </Toolbar>
     </AppBar>

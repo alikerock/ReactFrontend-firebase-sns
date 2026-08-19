@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { Box, Card, CardContent, Typography, Button, Divider, Stack } from "@mui/material";
 import { Google, GitHub } from "@mui/icons-material";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  getAdditionalUserInfo,
+  GoogleAuthProvider,
+  signInWithPopup,
+} from "firebase/auth";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import FormField from "../components/FormField";
-import { auth } from "../../firebase";
+import { auth, db } from "../../firebase";
 
 const initialState = {
   username: "",
@@ -90,12 +96,52 @@ export default function Signup() {
     setSubmitError("");
 
     try {
-      await createUserWithEmailAndPassword(auth, form.email.trim(), form.password);
+      const { user } = await createUserWithEmailAndPassword(auth, form.email.trim(), form.password);
+
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        displayName: form.username.trim(),
+        email: user.email,
+        photoURL: user.photoURL,
+        createdAt: serverTimestamp(),
+      });
+
       navigate("/login");
     } catch (error) {
+      console.error("회원가입 사용자 정보 저장 오류:", error);
       setSubmitError(firebaseErrorMessage(error.code));
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    setSubmitError("");
+
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const additionalUserInfo = getAdditionalUserInfo(result);
+
+      if (additionalUserInfo?.isNewUser) {
+        try {
+          await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL,
+            createdAt: serverTimestamp(),
+          });
+        } catch (error) {
+          console.error("Google 사용자 정보 저장 오류:", error);
+        }
+      }
+
+      navigate("/");
+    } catch (error) {
+      console.error("Google 회원가입 오류:", error);
+      setSubmitError("Google 회원가입에 실패했습니다. 다시 시도해주세요.");
     }
   };
 
@@ -193,6 +239,7 @@ export default function Signup() {
               variant="outlined"
               fullWidth
               startIcon={<Google />}
+              onClick={handleGoogleSignup}
               sx={{
                 height: 38,
                 color: "text.primary",

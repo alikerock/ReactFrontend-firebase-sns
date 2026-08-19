@@ -1,0 +1,13 @@
+7차시
+Google 소셜 로그인과 사용자 정보
+---------------------------
+https://github.com/alikerock/ReactFrontend-firebase-sns
+
+1. 로그인 방법
+
+2. 구글 로그인 구현
+3. 사용자 정보 users 컬렉션에 저장
+ - 컬렉션 추가
+request.auth != null 
+
+4. 사용자 정보에 따라 메뉴 출력

@@ -1,17 +1,52 @@
 import { useState } from "react";
 import { Box, Card, CardContent, Typography, Button, Divider, Stack } from "@mui/material";
 import { Google, GitHub } from "@mui/icons-material";
+import { getAdditionalUserInfo, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import FormField from "../components/FormField";
+import { auth, db } from "../../firebase";
 
 export default function Login() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
+  const [loginError, setLoginError] = useState("");
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleLogin = () => {
     navigate("/");
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoginError("");
+
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const additionalUserInfo = getAdditionalUserInfo(result);
+
+      if (additionalUserInfo?.isNewUser) {
+        try {
+          await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL,
+            createdAt: serverTimestamp(),
+          });
+        } catch (error) {
+          console.error("Google 사용자 정보 저장 오류:", error);
+        }
+      }
+
+      console.log("Google 로그인 사용자:", user);
+      navigate("/");
+    } catch (error) {
+      console.error("Google 로그인 오류:", error);
+      setLoginError("Google 로그인에 실패했습니다. 다시 시도해주세요.");
+    }
   };
 
   return (
@@ -60,6 +95,12 @@ export default function Login() {
             로그인
           </Button>
 
+          {loginError && (
+            <Typography variant="body2" color="error" sx={{ mb: 1.5, textAlign: "center" }}>
+              {loginError}
+            </Typography>
+          )}
+
           <Divider sx={{ mb: 2 }}>
             <Typography variant="caption" color="text.disabled">
               또는
@@ -71,6 +112,7 @@ export default function Login() {
               variant="outlined"
               fullWidth
               startIcon={<Google />}
+              onClick={handleGoogleLogin}
               sx={{
                 height: 40,
                 color: "text.primary",
