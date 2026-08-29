@@ -1,0 +1,8 @@
+현재 게시글 작성 페이지의 UI는 유지하면서 Firestore 게시글 등록 기능을 추가해줘.
+등록 버튼을 클릭하면 posts 컬렉션에 새로운 문서를 저장해줘.
+저장할 필드는 title, topic, content, authorId, authorName, createdAt이야.
+authorId는 현재 로그인 사용자의 uid, authorName은 로그인 사용자의 displayName을 사용해줘.
+게시글 ID는 addDoc을 이용하여 Firestore가 자동 생성하도록 하고, createdAt은 serverTimestamp()를 사용해줘.
+제목, 주제, 내용이 비어 있으면 저장하지 않도록 기본적인 검증도 추가해줘.
+저장 성공 후 작성 폼을 초기화하고, 저장 실패 시 콘솔에서 오류를 확인할 수 있도록 처리해줘.
+기존 UI와 다른 컴포넌트는 불필요하게 수정하지 마
