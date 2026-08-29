@@ -1,0 +1,5 @@
+게시글 목록 페이지의 일회성 getDocs() 조회를 onSnapshot() 실시간 리스너로 변경해줘. 
+query와 orderBy('createdAt', 'desc')를 결합해 최신 글이 항상 상단에 위치하게 해줘. 
+snapshot.docs.map을 이용해 doc.id와 doc.data()가 바인딩된 배열로 setPosts를 호출해줘. 
+메모리 누수 방지를 위해 useEffect의 cleanup 반환 함수로 unsubscribe()를 포함해줘. 
+기존 게시글 카드 UI와 레이아웃은 변경하지 마
