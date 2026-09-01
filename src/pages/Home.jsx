@@ -1,11 +1,22 @@
 import { useEffect, useState } from "react";
-import { Box, Typography, Chip, Stack, Card, CardContent, Fab } from "@mui/material";
+import { Box, Typography, Chip, Stack, Card, CardContent, Fab, Button } from "@mui/material";
 import { Add } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  collection,
+  getCountFromServer,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  startAfter,
+} from "firebase/firestore";
 import { db } from "../../firebase";
 import PostCard from "../components/PostCard";
 import { topics, popularTopics } from "../data/mockData";
+
+const PAGE_SIZE = 3;
+const PAGE_GROUP_SIZE = 5;
 
 const getInitials = (name = "") => {
   const trimmed = name.trim();
@@ -19,15 +30,60 @@ const getInitials = (name = "") => {
 
 export default function Home() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTopic, setActiveTopic] = useState("전체");
   const [posts, setPosts] = useState([]);
+  const [pageCursors, setPageCursors] = useState({ 1: null });
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+
+  const pageParam = Number(searchParams.get("page"));
+  const currentPage = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1;
+  const firstPageInGroup = Math.floor((currentPage - 1) / PAGE_GROUP_SIZE) * PAGE_GROUP_SIZE + 1;
+  const pageNumbers = Array.from(
+    { length: Math.min(PAGE_GROUP_SIZE, Math.max(totalPages - firstPageInGroup + 1, 0)) },
+    (_, index) => firstPageInGroup + index,
+  );
+  const nextGroupPage = firstPageInGroup + PAGE_GROUP_SIZE;
 
   useEffect(() => {
-    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(
-      q,
-      snapshot => {
-        const postList = snapshot.docs.map(doc => {
+    let isCurrent = true;
+
+    const loadPage = async () => {
+      try {
+        const postsCollection = collection(db, "posts");
+        const countQuery = query(postsCollection, orderBy("createdAt", "desc"));
+        const countSnapshot = await getCountFromServer(countQuery);
+        const calculatedTotalPages = Math.max(1, Math.ceil(countSnapshot.data().count / PAGE_SIZE));
+
+        if (currentPage > calculatedTotalPages) {
+          changePage(calculatedTotalPages, true);
+          return;
+        }
+
+        const cursors = { ...pageCursors };
+        let cursor = cursors[1] || null;
+        let snapshot;
+
+        for (let page = 1; page <= currentPage; page += 1) {
+          const constraints = [orderBy("createdAt", "desc"), limit(PAGE_SIZE + 1)];
+          if (page > 1) {
+            cursor = cursors[page] || cursor;
+            if (!cursor) break;
+            constraints.splice(1, 0, startAfter(cursor));
+          }
+
+          snapshot = await getDocs(query(postsCollection, ...constraints));
+          if (page < currentPage) {
+            cursor = snapshot.docs[PAGE_SIZE - 1] || null;
+            cursors[page + 1] = cursor;
+          }
+        }
+
+        if (!isCurrent || !snapshot) return;
+
+        const visibleDocs = snapshot.docs.slice(0, PAGE_SIZE);
+        const postList = visibleDocs.map(doc => {
           const data = doc.data();
           const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date();
 
@@ -53,16 +109,27 @@ export default function Home() {
           };
         });
 
+        const lastVisible = visibleDocs.at(-1) || null;
         setPosts(postList);
-      },
-      error => {
+        setTotalPages(calculatedTotalPages);
+        setPageCursors(previous => ({ ...previous, ...cursors, [currentPage + 1]: lastVisible }));
+        setHasNextPage(nextGroupPage <= calculatedTotalPages);
+      } catch (error) {
         console.error("게시글 조회 실패:", error);
         setPosts([]);
-      },
-    );
+        setHasNextPage(false);
+      }
+    };
 
-    return () => unsubscribe();
-  }, []);
+    loadPage();
+    return () => {
+      isCurrent = false;
+    };
+  }, [currentPage]);
+
+  const changePage = (page, replace = false) => {
+    setSearchParams(page === 1 ? {} : { page: String(page) }, { replace });
+  };
 
   const filtered = activeTopic === "전체" ? posts : posts.filter(p => p.topic === activeTopic);
 
@@ -99,6 +166,32 @@ export default function Home() {
           {filtered.map(post => (
             <PostCard key={post.id} post={post} />
           ))}
+        </Stack>
+
+        <Stack direction="row" justifyContent="center" spacing={2} sx={{ mt: 4 }}>
+          <Button
+            variant="outlined"
+            disabled={firstPageInGroup === 1}
+            onClick={() => changePage(Math.max(1, firstPageInGroup - PAGE_GROUP_SIZE))}
+          >
+            이전
+          </Button>
+          {pageNumbers.map(page => (
+            <Button
+              key={page}
+              variant={currentPage === page ? "contained" : "outlined"}
+              onClick={() => changePage(page)}
+            >
+              {page}
+            </Button>
+          ))}
+          <Button
+            variant="outlined"
+            disabled={!hasNextPage}
+            onClick={() => changePage(nextGroupPage)}
+          >
+            다음
+          </Button>
         </Stack>
       </Box>
 
