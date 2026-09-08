@@ -15,15 +15,34 @@ import { CloudUpload } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { topics } from "../data/mockData";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../../firebase";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { db, storage } from "../../firebase";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function CreatePost() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [form, setForm] = useState({ title: "", topic: "", content: "" });
+  const [preview, setPreview] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleFileChange = e => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("이미지 파일만 선택할 수 있습니다.");
+      return;
+    }
+
+    setSelectedFile(file);
+    setPreview(URL.createObjectURL(file));
+    setError("");
+  };
 
   const handleSubmit = async () => {
     const title = form.title.trim();
@@ -39,11 +58,25 @@ export default function CreatePost() {
       return;
     }
 
+    setUploading(true);
+    setError("");
+
     try {
+      let imageUrl = "";
+
+      if (selectedFile) {
+        const extension = selectedFile.name.split(".").pop() || "jpg";
+        const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${extension}`;
+        const imageRef = ref(storage, `posts/${fileName}`);
+        await uploadBytes(imageRef, selectedFile);
+        imageUrl = await getDownloadURL(imageRef);
+      }
+
       await addDoc(collection(db, "posts"), {
         title,
         topic,
         content,
+        imageUrl,
         authorId: user.uid,
         authorName: user.displayName || "",
         createdAt: serverTimestamp(),
@@ -53,6 +86,9 @@ export default function CreatePost() {
       navigate("/");
     } catch (error) {
       console.error("게시글 저장 실패:", error);
+      setError("이미지 업로드 또는 게시글 등록에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -127,6 +163,8 @@ export default function CreatePost() {
                   대표 이미지
                 </Typography>
                 <Box
+                  component="label"
+                  htmlFor="post-image"
                   sx={{
                     bgcolor: "#f5f5f5",
                     border: "1px dashed #e0e0e0",
@@ -141,11 +179,34 @@ export default function CreatePost() {
                     "&:hover": { bgcolor: "#eeeeee" },
                   }}
                 >
-                  <CloudUpload sx={{ color: "primary.main", fontSize: 32 }} />
-                  <Typography variant="body2" fontWeight={500} color="text.secondary">
-                    클릭하여 이미지 업로드
-                  </Typography>
+                  {preview ? (
+                    <Box
+                      component="img"
+                      src={preview}
+                      alt="게시글 이미지 미리보기"
+                      sx={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 1 }}
+                    />
+                  ) : (
+                    <>
+                      <CloudUpload sx={{ color: "primary.main", fontSize: 32 }} />
+                      <Typography variant="body2" fontWeight={500} color="text.secondary">
+                        클릭하여 이미지 업로드
+                      </Typography>
+                    </>
+                  )}
                 </Box>
+                <input
+                  id="post-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  hidden
+                />
+                {error && (
+                  <Typography variant="caption" color="error">
+                    {error}
+                  </Typography>
+                )}
               </Stack>
 
               {/* Buttons */}
@@ -153,8 +214,13 @@ export default function CreatePost() {
                 <Button sx={{ color: "#666" }} onClick={() => navigate(-1)}>
                   취소
                 </Button>
-                <Button variant="contained" sx={{ px: 2.5, py: 1.25 }} onClick={handleSubmit}>
-                  등록
+                <Button
+                  variant="contained"
+                  sx={{ px: 2.5, py: 1.25 }}
+                  onClick={handleSubmit}
+                  disabled={uploading}
+                >
+                  {uploading ? "업로드 중..." : "등록"}
                 </Button>
               </Box>
             </Stack>
