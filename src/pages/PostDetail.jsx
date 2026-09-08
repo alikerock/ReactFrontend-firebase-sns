@@ -66,6 +66,7 @@ export default function PostDetail() {
           title: data.title || "",
           content: data.content || "",
           fullContent: data.content || "",
+          imageUrl: data.imageUrl || "",
           topic: data.topic || "",
           author: {
             id: data.authorId || "",
@@ -150,7 +151,21 @@ export default function PostDetail() {
             </Typography>
 
             {/* Image */}
-            <Box sx={{ bgcolor: "#e0e0e0", height: 300, borderRadius: 1, mb: 2.5 }} />
+            {post.imageUrl && (
+              <Box
+                component="img"
+                src={post.imageUrl}
+                alt={`${post.title} 이미지`}
+                sx={{
+                  display: "block",
+                  width: "100%",
+                  height: 300,
+                  objectFit: "cover",
+                  borderRadius: 1,
+                  mb: 2.5,
+                }}
+              />
+            )}
 
             {/* Body */}
             <Stack spacing={2} sx={{ mb: 2.5 }}>

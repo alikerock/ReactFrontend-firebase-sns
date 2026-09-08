@@ -8,7 +8,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { doc, deleteDoc } from "firebase/firestore";
-import { db } from "../../firebase";
+import { deleteObject, ref } from "firebase/storage";
+import { db, storage } from "../../firebase";
 
 export default function PostCard({ post }) {
   const navigate = useNavigate();
@@ -24,7 +25,21 @@ export default function PostCard({ post }) {
     e.stopPropagation();
     if (window.confirm("정말 삭제하시겠습니까?")) {
       try {
+        const imagePath = post.imagePath || post.imageUrl;
+
+        if (imagePath) {
+          try {
+            await deleteObject(ref(storage, imagePath));
+          } catch (error) {
+            if (error.code !== "storage/object-not-found") {
+              console.error("게시글 이미지 삭제 실패:", error);
+              throw error;
+            }
+          }
+        }
+
         await deleteDoc(doc(db, "posts", post.id));
+        navigate("/");
       } catch (error) {
         console.error("삭제 실패:", error);
         alert("게시글 삭제에 실패했습니다.");
@@ -84,8 +99,23 @@ export default function PostCard({ post }) {
           </Typography>
         </Box>
 
-        {/* Image placeholder */}
-        <Box sx={{ bgcolor: "#e0e0e0", height: 180, borderRadius: 1, mb: 2 }} />
+        {/* Image */}
+        {post.imageUrl && (
+          <Box
+            component="img"
+            src={post.imageUrl}
+            alt={`${post.title} 이미지`}
+            sx={{
+              display: "block",
+              width: "100%",
+              maxWidth: "100%",
+              height: 180,
+              objectFit: "cover",
+              borderRadius: 1,
+              mb: 2,
+            }}
+          />
+        )}
 
         {/* Footer */}
         <Box

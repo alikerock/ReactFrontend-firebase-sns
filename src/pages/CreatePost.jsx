@@ -63,11 +63,13 @@ export default function CreatePost() {
 
     try {
       let imageUrl = "";
+      let imagePath = "";
 
       if (selectedFile) {
         const extension = selectedFile.name.split(".").pop() || "jpg";
         const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${extension}`;
-        const imageRef = ref(storage, `posts/${fileName}`);
+        imagePath = `posts/${fileName}`;
+        const imageRef = ref(storage, imagePath);
         await uploadBytes(imageRef, selectedFile);
         imageUrl = await getDownloadURL(imageRef);
       }
@@ -77,6 +79,7 @@ export default function CreatePost() {
         topic,
         content,
         imageUrl,
+        imagePath,
         authorId: user.uid,
         authorName: user.displayName || "",
         createdAt: serverTimestamp(),

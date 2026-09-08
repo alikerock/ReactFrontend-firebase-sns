@@ -2,15 +2,7 @@ import { useEffect, useState } from "react";
 import { Box, Typography, Chip, Stack, Card, CardContent, Fab, Button } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import {
-  collection,
-  getCountFromServer,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  startAfter,
-} from "firebase/firestore";
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "../../firebase";
 import PostCard from "../components/PostCard";
 import { topics, popularTopics } from "../data/mockData";
@@ -33,7 +25,6 @@ export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTopic, setActiveTopic] = useState("전체");
   const [posts, setPosts] = useState([]);
-  const [pageCursors, setPageCursors] = useState({ 1: null });
   const [totalPages, setTotalPages] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
 
@@ -47,42 +38,19 @@ export default function Home() {
   const nextGroupPage = firstPageInGroup + PAGE_GROUP_SIZE;
 
   useEffect(() => {
-    let isCurrent = true;
-
-    const loadPage = async () => {
-      try {
-        const postsCollection = collection(db, "posts");
-        const countQuery = query(postsCollection, orderBy("createdAt", "desc"));
-        const countSnapshot = await getCountFromServer(countQuery);
-        const calculatedTotalPages = Math.max(1, Math.ceil(countSnapshot.data().count / PAGE_SIZE));
+    const postsQuery = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(
+      postsQuery,
+      snapshot => {
+        const calculatedTotalPages = Math.max(1, Math.ceil(snapshot.size / PAGE_SIZE));
 
         if (currentPage > calculatedTotalPages) {
           changePage(calculatedTotalPages, true);
           return;
         }
 
-        const cursors = { ...pageCursors };
-        let cursor = cursors[1] || null;
-        let snapshot;
-
-        for (let page = 1; page <= currentPage; page += 1) {
-          const constraints = [orderBy("createdAt", "desc"), limit(PAGE_SIZE + 1)];
-          if (page > 1) {
-            cursor = cursors[page] || cursor;
-            if (!cursor) break;
-            constraints.splice(1, 0, startAfter(cursor));
-          }
-
-          snapshot = await getDocs(query(postsCollection, ...constraints));
-          if (page < currentPage) {
-            cursor = snapshot.docs[PAGE_SIZE - 1] || null;
-            cursors[page + 1] = cursor;
-          }
-        }
-
-        if (!isCurrent || !snapshot) return;
-
-        const visibleDocs = snapshot.docs.slice(0, PAGE_SIZE);
+        const firstPostIndex = (currentPage - 1) * PAGE_SIZE;
+        const visibleDocs = snapshot.docs.slice(firstPostIndex, firstPostIndex + PAGE_SIZE);
         const postList = visibleDocs.map(doc => {
           const data = doc.data();
           const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date();
@@ -91,6 +59,8 @@ export default function Home() {
             id: doc.id,
             title: data.title || "",
             content: data.content || "",
+            imageUrl: data.imageUrl || "",
+            imagePath: data.imagePath || data.imageUrl || "",
             topic: data.topic || "",
             author: {
               id: data.authorId || "",
@@ -109,22 +79,18 @@ export default function Home() {
           };
         });
 
-        const lastVisible = visibleDocs.at(-1) || null;
         setPosts(postList);
         setTotalPages(calculatedTotalPages);
-        setPageCursors(previous => ({ ...previous, ...cursors, [currentPage + 1]: lastVisible }));
         setHasNextPage(nextGroupPage <= calculatedTotalPages);
-      } catch (error) {
+      },
+      error => {
         console.error("게시글 조회 실패:", error);
         setPosts([]);
         setHasNextPage(false);
-      }
-    };
+      },
+    );
 
-    loadPage();
-    return () => {
-      isCurrent = false;
-    };
+    return unsubscribe;
   }, [currentPage]);
 
   const changePage = (page, replace = false) => {
