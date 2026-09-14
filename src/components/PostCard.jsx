@@ -60,6 +60,8 @@ export default function PostCard({ post }) {
         {/* Author row */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
           <Avatar
+            src={post.author.photoURL || undefined}
+            alt={`${post.author.name} 프로필 이미지`}
             sx={{ width: 36, height: 36, bgcolor: "primary.main", fontSize: 12, fontWeight: 700 }}
           >
             {post.author.initials}
