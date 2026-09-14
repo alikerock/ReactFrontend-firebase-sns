@@ -13,8 +13,20 @@ import {
 } from "@mui/material";
 import { Favorite, FavoriteBorder, ChatBubbleOutlineRounded, Share } from "@mui/icons-material";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  where,
+} from "firebase/firestore";
 import { db } from "../../firebase";
+import { useAuth } from "../contexts/AuthContext";
 
 const getInitials = (name = "") => {
   const trimmed = name.trim();
@@ -29,11 +41,15 @@ const getInitials = (name = "") => {
 export default function PostDetail() {
   const { postId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [post, setPost] = useState(null);
   const [liked, setLiked] = useState(false);
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [commentsLoading, setCommentsLoading] = useState(true);
+  const [commentsError, setCommentsError] = useState("");
+  const [commentSaving, setCommentSaving] = useState(false);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -86,7 +102,6 @@ export default function PostDetail() {
         };
 
         setPost(postData);
-        setComments(postData.comments);
       } catch (error) {
         console.error("게시글 상세 조회 실패:", error);
         alert("게시글을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
@@ -99,13 +114,93 @@ export default function PostDetail() {
     fetchPost();
   }, [postId, navigate]);
 
-  const handleComment = () => {
-    if (!comment.trim()) return;
-    setComments([
-      ...comments,
-      { id: Date.now(), author: "현재 사용자", initials: "ME", content: comment },
-    ]);
-    setComment("");
+  useEffect(() => {
+    if (!postId) {
+      setCommentsLoading(false);
+      return undefined;
+    }
+
+    setCommentsLoading(true);
+    setCommentsError("");
+
+    const commentsQuery = query(
+      collection(db, "comments"),
+      where("postId", "==", postId),
+      orderBy("createdAt", "asc"),
+    );
+
+    const unsubscribe = onSnapshot(
+      commentsQuery,
+      snapshot => {
+        setComments(
+          snapshot.docs.map(commentDoc => {
+            const data = commentDoc.data();
+            const displayName = data.displayName || "익명";
+
+            return {
+              id: commentDoc.id,
+              uid: data.uid || "",
+              author: displayName,
+              initials: getInitials(displayName),
+              photoURL: data.photoURL || "",
+              content: data.content || "",
+            };
+          }),
+        );
+        setCommentsLoading(false);
+      },
+      error => {
+        console.error("댓글 실시간 조회 실패:", error);
+        setCommentsError("댓글을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+        setCommentsLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [postId]);
+
+  const handleComment = async () => {
+    if (!user) {
+      alert("로그인한 사용자만 댓글을 작성할 수 있습니다.");
+      return;
+    }
+
+    const trimmedComment = comment.trim();
+    if (!trimmedComment || !postId) return;
+
+    setCommentSaving(true);
+
+    try {
+      const displayName = user.displayName || user.email || "익명";
+      const commentRef = await addDoc(collection(db, "comments"), {
+        postId,
+        uid: user.uid,
+        displayName,
+        photoURL: user.photoURL || "",
+        content: trimmedComment,
+        createdAt: serverTimestamp(),
+      });
+
+      console.log("댓글 등록 완료:", commentRef.id);
+      setComment("");
+    } catch (error) {
+      console.error("댓글 등록 실패:", error);
+      alert("댓글 등록에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setCommentSaving(false);
+    }
+  };
+
+  const handleDeleteComment = async commentItem => {
+    if (!user || user.uid !== commentItem.uid) return;
+    if (!window.confirm("이 댓글을 삭제하시겠습니까?")) return;
+
+    try {
+      await deleteDoc(doc(db, "comments", commentItem.id));
+    } catch (error) {
+      console.error("댓글 삭제 실패:", error);
+      alert("댓글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    }
   };
 
   if (loading) {
@@ -204,30 +299,64 @@ export default function PostDetail() {
               댓글
             </Typography>
             <Stack spacing={2} sx={{ mb: 2.5 }}>
-              {comments.map(c => (
-                <Box key={c.id} sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>
-                  <Avatar
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      bgcolor: "#e0e0e0",
-                      color: "#666",
-                      fontSize: 11,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {c.initials}
-                  </Avatar>
-                  <Box sx={{ flex: 1, bgcolor: "#f5f5f5", borderRadius: 1, p: 1.5 }}>
-                    <Typography variant="body2" fontWeight={700} sx={{ mb: 0.5 }}>
-                      {c.author}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" lineHeight={1.4}>
-                      {c.content}
-                    </Typography>
+              {commentsLoading ? (
+                <Typography variant="body2" color="text.secondary">
+                  댓글을 불러오는 중입니다...
+                </Typography>
+              ) : commentsError ? (
+                <Typography variant="body2" color="error">
+                  {commentsError}
+                </Typography>
+              ) : comments.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  아직 작성된 댓글이 없습니다.
+                </Typography>
+              ) : (
+                comments.map(c => (
+                  <Box key={c.id} sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>
+                    <Avatar
+                      src={c.photoURL || undefined}
+                      alt={`${c.author} 프로필 이미지`}
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        bgcolor: "#e0e0e0",
+                        color: "#666",
+                        fontSize: 11,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {c.initials}
+                    </Avatar>
+                    <Box sx={{ flex: 1, bgcolor: "#f5f5f5", borderRadius: 1, p: 1.5 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Typography variant="body2" fontWeight={700} sx={{ mb: 0.5 }}>
+                          {c.author}
+                        </Typography>
+                        {user?.uid === c.uid && (
+                          <Button
+                            size="small"
+                            color="error"
+                            onClick={() => handleDeleteComment(c)}
+                            sx={{ minWidth: 0, p: 0, fontSize: 12 }}
+                          >
+                            삭제
+                          </Button>
+                        )}
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" lineHeight={1.4}>
+                        {c.content}
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
-              ))}
+                ))
+              )}
             </Stack>
 
             {/* Comment input */}
@@ -244,6 +373,7 @@ export default function PostDetail() {
                 variant="contained"
                 sx={{ height: 40, flexShrink: 0 }}
                 onClick={handleComment}
+                disabled={commentSaving}
               >
                 등록
               </Button>

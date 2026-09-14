@@ -25,6 +25,7 @@ export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTopic, setActiveTopic] = useState("전체");
   const [posts, setPosts] = useState([]);
+  const [commentCounts, setCommentCounts] = useState({});
   const [totalPages, setTotalPages] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
 
@@ -93,11 +94,40 @@ export default function Home() {
     return unsubscribe;
   }, [currentPage]);
 
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      collection(db, "comments"),
+      snapshot => {
+        const counts = snapshot.docs.reduce((result, commentDoc) => {
+          const postId = commentDoc.data().postId;
+          if (postId) {
+            result[postId] = (result[postId] || 0) + 1;
+          }
+          return result;
+        }, {});
+
+        setCommentCounts(counts);
+      },
+      error => {
+        console.error("댓글 개수 조회 실패:", error);
+      },
+    );
+
+    return unsubscribe;
+  }, []);
+
   const changePage = (page, replace = false) => {
     setSearchParams(page === 1 ? {} : { page: String(page) }, { replace });
   };
 
-  const filtered = activeTopic === "전체" ? posts : posts.filter(p => p.topic === activeTopic);
+  const postsWithCommentCounts = posts.map(post => ({
+    ...post,
+    commentCount: commentCounts[post.id],
+  }));
+  const filtered =
+    activeTopic === "전체"
+      ? postsWithCommentCounts
+      : postsWithCommentCounts.filter(p => p.topic === activeTopic);
 
   return (
     <Box sx={{ display: "flex", flex: 1 }}>

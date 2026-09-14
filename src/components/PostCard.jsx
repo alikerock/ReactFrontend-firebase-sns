@@ -142,7 +142,7 @@ export default function PostCard({ post }) {
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
               <ChatBubbleOutlineRounded sx={{ fontSize: 18, color: "#666" }} />
               <Typography variant="body2" color="text.secondary">
-                댓글 {post.comments.length}개
+                댓글 {post.commentCount ?? post.comments.length}개
               </Typography>
             </Box>
           </Box>
