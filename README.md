@@ -120,7 +120,7 @@ SNS 기능 구현
 | 13차시 | Firebase Storage 이미지 업로드               | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/esson-13)  |
 | 14차시 | 게시글 이미지 출력·교체·삭제하기             | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/esson-14)  |
 | 15차시 | 프로필과 내 게시글 구현                      | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/esson-15)  |
-| 16차시 | 댓글 작성·삭제 및 실시간 반영                | Release 준비                                                                                      |
+| 16차시 | 댓글 작성·삭제 및 실시간 반영                | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/esson-16)  |
 | 17차시 | 토글과 개수 표시로 좋아요 구현하기           | Release 준비                                                                                      |
 | 18차시 | Firebase 보안 규칙과 사용자 경험 개선        | Release 준비                                                                                      |
 | 19차시 | 배포·리팩토링 및 포트폴리오 정리             | Release 준비                                                                                      |
