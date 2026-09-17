@@ -10,6 +10,12 @@ import {
   Stack,
   TextField,
   Button,
+  Alert,
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { Favorite, FavoriteBorder, ChatBubbleOutlineRounded, Share } from "@mui/icons-material";
 import { useParams, useNavigate } from "react-router-dom";
@@ -53,11 +59,15 @@ export default function PostDetail() {
   const [commentsError, setCommentsError] = useState("");
   const [commentSaving, setCommentSaving] = useState(false);
   const [likeSaving, setLikeSaving] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState(null);
+  const [commentDeleting, setCommentDeleting] = useState(false);
+  const [feedback, setFeedback] = useState({ message: "", severity: "error" });
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   useEffect(() => {
     const fetchPost = async () => {
       if (!postId) {
-        alert("잘못된 게시글 경로입니다.");
+        setFeedback({ message: "잘못된 게시글 경로입니다.", severity: "error" });
         navigate("/404");
         setLoading(false);
         return;
@@ -70,7 +80,7 @@ export default function PostDetail() {
         const docSnap = await getDoc(postRef);
 
         if (!docSnap.exists()) {
-          alert("존재하지 않는 게시글입니다.");
+          setFeedback({ message: "존재하지 않는 게시글입니다.", severity: "warning" });
           setPost(null);
           setComments([]);
           navigate("/404");
@@ -107,7 +117,10 @@ export default function PostDetail() {
         setPost(postData);
       } catch (error) {
         console.error("게시글 상세 조회 실패:", error);
-        alert("게시글을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+        setFeedback({
+          message: "게시글을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.",
+          severity: "error",
+        });
         navigate("/404");
       } finally {
         setLoading(false);
@@ -182,7 +195,7 @@ export default function PostDetail() {
 
   const handleComment = async () => {
     if (!user) {
-      alert("로그인한 사용자만 댓글을 작성할 수 있습니다.");
+      setFeedback({ message: "로그인한 사용자만 댓글을 작성할 수 있습니다.", severity: "warning" });
       return;
     }
 
@@ -204,9 +217,13 @@ export default function PostDetail() {
 
       console.log("댓글 등록 완료:", commentRef.id);
       setComment("");
+      setSnackbarOpen(true);
     } catch (error) {
       console.error("댓글 등록 실패:", error);
-      alert("댓글 등록에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      setFeedback({
+        message: "댓글 등록에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        severity: "error",
+      });
     } finally {
       setCommentSaving(false);
     }
@@ -214,7 +231,7 @@ export default function PostDetail() {
 
   const handleLike = async () => {
     if (!user) {
-      alert("로그인한 사용자만 좋아요를 누를 수 있습니다.");
+      setFeedback({ message: "로그인한 사용자만 좋아요를 누를 수 있습니다.", severity: "warning" });
       return;
     }
 
@@ -234,7 +251,10 @@ export default function PostDetail() {
       setLiked(!nextLiked);
       setLikeCount(currentCount => currentCount + (nextLiked ? -1 : 1));
       console.error("좋아요 처리 실패:", error);
-      alert("좋아요 처리에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      setFeedback({
+        message: "좋아요 처리에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        severity: "error",
+      });
     } finally {
       setLikeSaving(false);
     }
@@ -242,13 +262,24 @@ export default function PostDetail() {
 
   const handleDeleteComment = async commentItem => {
     if (!user || user.uid !== commentItem.uid) return;
-    if (!window.confirm("이 댓글을 삭제하시겠습니까?")) return;
+    setCommentToDelete(commentItem);
+  };
 
+  const handleDeleteCommentConfirm = async () => {
+    if (!commentToDelete) return;
+    setCommentDeleting(true);
     try {
-      await deleteDoc(doc(db, "comments", commentItem.id));
+      await deleteDoc(doc(db, "comments", commentToDelete.id));
+      setSnackbarOpen(true);
     } catch (error) {
       console.error("댓글 삭제 실패:", error);
-      alert("댓글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      setFeedback({
+        message: "댓글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        severity: "error",
+      });
+    } finally {
+      setCommentDeleting(false);
+      setCommentToDelete(null);
     }
   };
 
@@ -271,6 +302,15 @@ export default function PostDetail() {
       <Box sx={{ flex: 1, maxWidth: 680, p: 3 }}>
         <Card sx={{ boxShadow: "0px 1px 1px rgba(0,0,0,0.05)" }}>
           <CardContent sx={{ p: 3 }}>
+            {feedback.message && (
+              <Alert
+                severity={feedback.severity}
+                onClose={() => setFeedback({ message: "", severity: "error" })}
+                sx={{ mb: 2 }}
+              >
+                {feedback.message}
+              </Alert>
+            )}
             {/* Author row */}
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
               <Avatar sx={{ width: 40, height: 40, bgcolor: "primary.main", fontWeight: 700 }}>
@@ -398,6 +438,7 @@ export default function PostDetail() {
                             size="small"
                             color="error"
                             onClick={() => handleDeleteComment(c)}
+                            disabled={commentDeleting}
                             sx={{ minWidth: 0, p: 0, fontSize: 12 }}
                           >
                             삭제
@@ -435,6 +476,32 @@ export default function PostDetail() {
           </CardContent>
         </Card>
       </Box>
+      <Dialog
+        open={Boolean(commentToDelete)}
+        onClose={() => !commentDeleting && setCommentToDelete(null)}
+      >
+        <DialogTitle>댓글을 삭제하시겠습니까?</DialogTitle>
+        <DialogContent>삭제한 댓글은 복구할 수 없습니다.</DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCommentToDelete(null)} disabled={commentDeleting}>
+            취소
+          </Button>
+          <Button
+            onClick={handleDeleteCommentConfirm}
+            color="error"
+            variant="contained"
+            disabled={commentDeleting}
+          >
+            {commentDeleting ? "삭제 중..." : "삭제"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        message="처리가 완료되었습니다."
+      />
     </Box>
   );
 }

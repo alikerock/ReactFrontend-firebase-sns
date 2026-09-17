@@ -1,5 +1,19 @@
 import { useEffect, useState } from "react";
-import { Box, Card, CardContent, Typography, TextField, Button, Stack } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Button,
+  Stack,
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 import { CloudUpload } from "@mui/icons-material";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
@@ -18,6 +32,8 @@ export default function EditPost() {
   const [preview, setPreview] = useState("");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [replacementDialogOpen, setReplacementDialogOpen] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -31,7 +47,7 @@ export default function EditPost() {
 
           // 작성자 확인
           if (user?.uid !== data.authorId) {
-            alert("본인의 글만 수정할 수 있습니다.");
+            setError("본인의 글만 수정할 수 있습니다.");
             navigate("/");
             return;
           }
@@ -41,12 +57,12 @@ export default function EditPost() {
             content: data.content || "",
           });
         } else {
-          alert("게시글을 찾을 수 없습니다.");
+          setError("게시글을 찾을 수 없습니다.");
           navigate("/");
         }
       } catch (error) {
         console.error("게시글 조회 실패:", error);
-        alert("게시글 조회에 실패했습니다.");
+        setError("게시글 조회에 실패했습니다. 잠시 후 다시 시도해주세요.");
         navigate("/");
       } finally {
         setLoading(false);
@@ -74,9 +90,14 @@ export default function EditPost() {
     setError("");
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (confirmed = false) => {
     if (!form.title.trim() || !form.content.trim()) {
-      alert("제목과 내용을 입력해주세요.");
+      setError("제목과 내용을 입력해주세요.");
+      return;
+    }
+
+    if (!confirmed && selectedFile && (post?.imagePath || post?.imageUrl)) {
+      setReplacementDialogOpen(true);
       return;
     }
 
@@ -110,8 +131,8 @@ export default function EditPost() {
         await deleteObject(ref(storage, oldImagePath));
       }
 
-      alert("게시글이 수정되었습니다.");
-      navigate(`/posts/${postId}`);
+      setSuccessOpen(true);
+      setTimeout(() => navigate(`/posts/${postId}`), 700);
     } catch (error) {
       console.error("수정 실패:", error);
       setError(`게시글 수정에 실패했습니다: ${error.message || "알 수 없는 오류"}`);
@@ -244,9 +265,9 @@ export default function EditPost() {
               </Stack>
 
               {error && (
-                <Typography variant="body2" color="error">
+                <Alert severity="error" onClose={() => setError("")}>
                   {error}
-                </Typography>
+                </Alert>
               )}
 
               <Box sx={{ display: "flex", justifyContent: "space-between", pt: 1.5 }}>
@@ -266,6 +287,34 @@ export default function EditPost() {
           </CardContent>
         </Card>
       </Box>
+      <Dialog
+        open={replacementDialogOpen}
+        onClose={() => !uploading && setReplacementDialogOpen(false)}
+      >
+        <DialogTitle>대표 이미지를 교체하시겠습니까?</DialogTitle>
+        <DialogContent>기존 대표 이미지는 삭제되며 복구할 수 없습니다.</DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReplacementDialogOpen(false)} disabled={uploading}>
+            취소
+          </Button>
+          <Button
+            onClick={() => {
+              setReplacementDialogOpen(false);
+              handleSubmit(true);
+            }}
+            variant="contained"
+            disabled={uploading}
+          >
+            교체 후 수정
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Snackbar
+        open={successOpen}
+        autoHideDuration={3000}
+        onClose={() => setSuccessOpen(false)}
+        message="게시글 수정이 완료되었습니다."
+      />
     </Box>
   );
 }

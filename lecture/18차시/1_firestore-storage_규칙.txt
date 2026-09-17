@@ -1,6 +1,8 @@
 [ Firestore 규칙 예시 ]
- allow create: if request.auth != null
-   && request.resource.data.uid == request.auth.uid;
+allow read: if true;
+
+allow create: if request.auth != null
+  && request.resource.data.uid == request.auth.uid;
 
 allow update: if request.auth != null
   && resource.data.uid == request.auth.uid
@@ -11,16 +13,18 @@ allow delete: if request.auth != null
 
 
 [ Storage 규칙 예시 ]
+// 프로필 이미지
+match /profiles/{userId}/{allPaths=**} {
+  allow read: if true;
+
+  allow create, update, delete: if request.auth != null
+    && request.auth.uid == userId;
+}
+
+// 게시글 이미지
 match /posts/{userId}/{allPaths=**} {
+  allow read: if true;
 
-      // 누구나 이미지 조회 가능
-      allow read: if true;
-
-      // 로그인한 본인만 업로드 및 수정 가능
-      allow create, update: if request.auth != null
-        && request.auth.uid == userId;
-
-      // 로그인한 본인만 파일 삭제 가능
-      allow delete: if request.auth != null
-        && request.auth.uid == userId;
-    }
+  allow create, update, delete: if request.auth != null
+    && request.auth.uid == userId;
+}

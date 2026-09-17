@@ -9,6 +9,8 @@ import {
   TextField,
   Divider,
   Stack,
+  Alert,
+  Snackbar,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import {
@@ -32,6 +34,7 @@ export default function ProfileEdit() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [successOpen, setSuccessOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [postCount, setPostCount] = useState(0);
@@ -120,6 +123,11 @@ export default function ProfileEdit() {
   const handleSave = async () => {
     if (!user || saving) return;
 
+    if (!form.name.trim()) {
+      setError("이름을 입력해주세요.");
+      return;
+    }
+
     setSaving(true);
     setError("");
 
@@ -149,7 +157,8 @@ export default function ProfileEdit() {
         { merge: true },
       );
 
-      navigate("/profile");
+      setSuccessOpen(true);
+      setTimeout(() => navigate("/profile"), 700);
     } catch (saveError) {
       console.error("프로필 정보 저장 실패:", saveError);
       setError("프로필 저장에 실패했습니다. 다시 시도해주세요.");
@@ -175,6 +184,11 @@ export default function ProfileEdit() {
             <Typography variant="h6" fontWeight={700} sx={{ mb: 3.5 }}>
               프로필 정보 수정
             </Typography>
+            {error && (
+              <Alert severity="error" onClose={() => setError("")} sx={{ mb: 2.5 }}>
+                {error}
+              </Alert>
+            )}
 
             {/* Photo section */}
             <Box sx={{ display: "flex", alignItems: "center", gap: 3, mb: 3.5 }}>
@@ -354,6 +368,16 @@ export default function ProfileEdit() {
           </CardContent>
         </Card>
       </Box>
+      <Snackbar
+        open={successOpen}
+        autoHideDuration={3000}
+        onClose={() => setSuccessOpen(false)}
+        message={
+          selectedFile
+            ? "프로필 이미지 업로드와 저장이 완료되었습니다."
+            : "프로필 저장이 완료되었습니다."
+        }
+      />
     </Box>
   );
 }

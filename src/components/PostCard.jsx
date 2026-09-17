@@ -1,5 +1,19 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, Box, Avatar, Typography, Button, IconButton } from "@mui/material";
+import {
+  Alert,
+  Card,
+  CardContent,
+  Box,
+  Avatar,
+  Typography,
+  Button,
+  IconButton,
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 import {
   Favorite,
   FavoriteBorder,
@@ -26,6 +40,10 @@ export default function PostCard({ post }) {
   const [likeCount, setLikeCount] = useState(Number(post.likes || 0));
   const [liked, setLiked] = useState(false);
   const [likeSaving, setLikeSaving] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [feedback, setFeedback] = useState({ message: "", severity: "error" });
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const isOwner = user?.uid === post.author.id;
 
   useEffect(() => {
@@ -47,7 +65,7 @@ export default function PostCard({ post }) {
   const handleLike = async e => {
     e.stopPropagation();
     if (!user) {
-      alert("로그인한 사용자만 좋아요를 누를 수 있습니다.");
+      setFeedback({ message: "로그인한 사용자만 좋아요를 누를 수 있습니다.", severity: "warning" });
       return;
     }
 
@@ -63,11 +81,15 @@ export default function PostCard({ post }) {
       } else {
         await deleteDoc(likeRef);
       }
+      setSnackbarOpen(true);
     } catch (error) {
       setLiked(!nextLiked);
       setLikeCount(currentCount => currentCount + (nextLiked ? -1 : 1));
       console.error("좋아요 처리 실패:", error);
-      alert("좋아요 처리에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      setFeedback({
+        message: "좋아요 처리에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        severity: "error",
+      });
     } finally {
       setLikeSaving(false);
     }
@@ -80,27 +102,36 @@ export default function PostCard({ post }) {
 
   const handleDelete = async e => {
     e.stopPropagation();
-    if (window.confirm("정말 삭제하시겠습니까?")) {
-      try {
-        const imagePath = post.imagePath || post.imageUrl;
+    setDeleteDialogOpen(true);
+  };
 
-        if (imagePath) {
-          try {
-            await deleteObject(ref(storage, imagePath));
-          } catch (error) {
-            if (error.code !== "storage/object-not-found") {
-              console.error("게시글 이미지 삭제 실패:", error);
-              throw error;
-            }
+  const handleDeleteConfirm = async () => {
+    setDeleting(true);
+    try {
+      const imagePath = post.imagePath || post.imageUrl;
+
+      if (imagePath) {
+        try {
+          await deleteObject(ref(storage, imagePath));
+        } catch (error) {
+          if (error.code !== "storage/object-not-found") {
+            console.error("게시글 이미지 삭제 실패:", error);
+            throw error;
           }
         }
-
-        await deleteDoc(doc(db, "posts", post.id));
-        navigate("/");
-      } catch (error) {
-        console.error("삭제 실패:", error);
-        alert("게시글 삭제에 실패했습니다.");
       }
+
+      await deleteDoc(doc(db, "posts", post.id));
+      navigate("/");
+    } catch (error) {
+      console.error("삭제 실패:", error);
+      setFeedback({
+        message: "게시글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        severity: "error",
+      });
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -114,6 +145,15 @@ export default function PostCard({ post }) {
       onClick={() => navigate(`/posts/${post.id}`)}
     >
       <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+        {feedback.message && (
+          <Alert
+            severity={feedback.severity}
+            onClose={() => setFeedback({ message: "", severity: "error" })}
+            sx={{ mb: 2 }}
+          >
+            {feedback.message}
+          </Alert>
+        )}
         {/* Author row */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
           <Avatar
@@ -237,6 +277,7 @@ export default function PostCard({ post }) {
                 color="error"
                 startIcon={<DeleteOutlineRounded sx={{ fontSize: 16 }} />}
                 onClick={handleDelete}
+                disabled={deleting}
                 sx={{
                   minWidth: 0,
                   px: 1.25,
@@ -251,6 +292,29 @@ export default function PostCard({ post }) {
           )}
         </Box>
       </CardContent>
+      <Dialog open={deleteDialogOpen} onClose={() => !deleting && setDeleteDialogOpen(false)}>
+        <DialogTitle>게시글을 삭제하시겠습니까?</DialogTitle>
+        <DialogContent>삭제한 게시글과 대표 이미지는 복구할 수 없습니다.</DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+            취소
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            disabled={deleting}
+          >
+            {deleting ? "삭제 중..." : "삭제"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        message="좋아요 처리가 완료되었습니다."
+      />
     </Card>
   );
 }

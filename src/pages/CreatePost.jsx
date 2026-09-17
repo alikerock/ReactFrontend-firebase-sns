@@ -10,6 +10,8 @@ import {
   MenuItem,
   FormControl,
   Stack,
+  Alert,
+  Snackbar,
 } from "@mui/material";
 import { CloudUpload } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -27,6 +29,7 @@ export default function CreatePost() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [successOpen, setSuccessOpen] = useState(false);
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -50,11 +53,13 @@ export default function CreatePost() {
     const content = form.content.trim();
 
     if (!title || !topic || !content) {
+      setError("제목, 주제, 내용을 모두 입력해주세요.");
       return;
     }
 
     if (!user) {
       console.error("로그인된 사용자가 없어 게시글을 저장할 수 없습니다.");
+      setError("로그인한 사용자만 게시글을 등록할 수 있습니다.");
       return;
     }
 
@@ -68,7 +73,7 @@ export default function CreatePost() {
       if (selectedFile) {
         const extension = selectedFile.name.split(".").pop() || "jpg";
         const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${extension}`;
-        imagePath = `posts/${fileName}`;
+        imagePath = `posts/${user.uid}/${fileName}`;
         const imageRef = ref(storage, imagePath);
         await uploadBytes(imageRef, selectedFile);
         imageUrl = await getDownloadURL(imageRef);
@@ -80,13 +85,15 @@ export default function CreatePost() {
         content,
         imageUrl,
         imagePath,
+        uid: user.uid,
         authorId: user.uid,
         authorName: user.displayName || "",
         createdAt: serverTimestamp(),
       });
 
       setForm({ title: "", topic: "", content: "" });
-      navigate("/");
+      setSuccessOpen(true);
+      setTimeout(() => navigate("/"), 700);
     } catch (error) {
       console.error("게시글 저장 실패:", error);
       setError("이미지 업로드 또는 게시글 등록에 실패했습니다. 다시 시도해주세요.");
@@ -206,9 +213,9 @@ export default function CreatePost() {
                   hidden
                 />
                 {error && (
-                  <Typography variant="caption" color="error">
+                  <Alert severity="error" onClose={() => setError("")}>
                     {error}
-                  </Typography>
+                  </Alert>
                 )}
               </Stack>
 
@@ -230,6 +237,16 @@ export default function CreatePost() {
           </CardContent>
         </Card>
       </Box>
+      <Snackbar
+        open={successOpen}
+        autoHideDuration={3000}
+        onClose={() => setSuccessOpen(false)}
+        message={
+          selectedFile
+            ? "게시글 등록과 이미지 업로드가 완료되었습니다."
+            : "게시글 등록이 완료되었습니다."
+        }
+      />
     </Box>
   );
 }
