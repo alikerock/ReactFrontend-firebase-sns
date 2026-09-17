@@ -1,5 +1,7 @@
-import { Card, CardContent, Box, Avatar, Typography, Button } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Card, CardContent, Box, Avatar, Typography, Button, IconButton } from "@mui/material";
 import {
+  Favorite,
   FavoriteBorder,
   ChatBubbleOutlineRounded,
   EditOutlined,
@@ -7,14 +9,69 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { doc, deleteDoc } from "firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+} from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
 import { db, storage } from "../../firebase";
 
 export default function PostCard({ post }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [likeCount, setLikeCount] = useState(Number(post.likes || 0));
+  const [liked, setLiked] = useState(false);
+  const [likeSaving, setLikeSaving] = useState(false);
   const isOwner = user?.uid === post.author.id;
+
+  useEffect(() => {
+    const likesRef = collection(db, "posts", post.id, "likes");
+    const unsubscribe = onSnapshot(
+      likesRef,
+      snapshot => {
+        setLikeCount(snapshot.size);
+        setLiked(Boolean(user?.uid && snapshot.docs.some(likeDoc => likeDoc.id === user.uid)));
+      },
+      error => {
+        console.error("좋아요 조회 실패:", error);
+      },
+    );
+
+    return unsubscribe;
+  }, [post.id, user?.uid]);
+
+  const handleLike = async e => {
+    e.stopPropagation();
+    if (!user) {
+      alert("로그인한 사용자만 좋아요를 누를 수 있습니다.");
+      return;
+    }
+
+    const likeRef = doc(db, "posts", post.id, "likes", user.uid);
+    const nextLiked = !liked;
+    setLikeSaving(true);
+    setLiked(nextLiked);
+    setLikeCount(currentCount => currentCount + (nextLiked ? 1 : -1));
+
+    try {
+      if (nextLiked) {
+        await setDoc(likeRef, { uid: user.uid, createdAt: serverTimestamp() });
+      } else {
+        await deleteDoc(likeRef);
+      }
+    } catch (error) {
+      setLiked(!nextLiked);
+      setLikeCount(currentCount => currentCount + (nextLiked ? -1 : 1));
+      console.error("좋아요 처리 실패:", error);
+      alert("좋아요 처리에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setLikeSaving(false);
+    }
+  };
 
   const handleEdit = e => {
     e.stopPropagation();
@@ -130,13 +187,22 @@ export default function PostCard({ post }) {
           }}
         >
           <Box sx={{ display: "flex", gap: 3 }}>
-            <Box
-              sx={{ display: "flex", alignItems: "center", gap: 0.75 }}
-              onClick={e => e.stopPropagation()}
-            >
-              <FavoriteBorder sx={{ fontSize: 18, color: "#666" }} />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.25 }}>
+              <IconButton
+                size="small"
+                aria-label={liked ? "좋아요 취소" : "좋아요"}
+                disabled={likeSaving}
+                onClick={handleLike}
+                sx={{ p: 0.5, color: liked ? "primary.main" : "#666" }}
+              >
+                {liked ? (
+                  <Favorite sx={{ fontSize: 18 }} />
+                ) : (
+                  <FavoriteBorder sx={{ fontSize: 18 }} />
+                )}
+              </IconButton>
               <Typography variant="body2" color="text.secondary">
-                {post.likes}
+                {likeCount}
               </Typography>
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>

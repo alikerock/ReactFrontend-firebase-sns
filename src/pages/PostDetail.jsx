@@ -23,6 +23,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
   where,
 } from "firebase/firestore";
 import { db } from "../../firebase";
@@ -43,6 +44,7 @@ export default function PostDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [post, setPost] = useState(null);
+  const [likeCount, setLikeCount] = useState(0);
   const [liked, setLiked] = useState(false);
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState([]);
@@ -50,6 +52,7 @@ export default function PostDetail() {
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [commentsError, setCommentsError] = useState("");
   const [commentSaving, setCommentSaving] = useState(false);
+  const [likeSaving, setLikeSaving] = useState(false);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -113,6 +116,24 @@ export default function PostDetail() {
 
     fetchPost();
   }, [postId, navigate]);
+
+  useEffect(() => {
+    if (!postId) return undefined;
+
+    const likesRef = collection(db, "posts", postId, "likes");
+    const unsubscribe = onSnapshot(
+      likesRef,
+      snapshot => {
+        setLiked(Boolean(user?.uid && snapshot.docs.some(likeDoc => likeDoc.id === user.uid)));
+        setLikeCount(snapshot.size);
+      },
+      error => {
+        console.error("좋아요 조회 실패:", error);
+      },
+    );
+
+    return unsubscribe;
+  }, [postId, user?.uid]);
 
   useEffect(() => {
     if (!postId) {
@@ -188,6 +209,34 @@ export default function PostDetail() {
       alert("댓글 등록에 실패했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setCommentSaving(false);
+    }
+  };
+
+  const handleLike = async () => {
+    if (!user) {
+      alert("로그인한 사용자만 좋아요를 누를 수 있습니다.");
+      return;
+    }
+
+    const likeRef = doc(db, "posts", postId, "likes", user.uid);
+    const nextLiked = !liked;
+    setLikeSaving(true);
+    setLiked(nextLiked);
+    setLikeCount(currentCount => currentCount + (nextLiked ? 1 : -1));
+
+    try {
+      if (nextLiked) {
+        await setDoc(likeRef, { uid: user.uid, createdAt: serverTimestamp() });
+      } else {
+        await deleteDoc(likeRef);
+      }
+    } catch (error) {
+      setLiked(!nextLiked);
+      setLikeCount(currentCount => currentCount + (nextLiked ? -1 : 1));
+      console.error("좋아요 처리 실패:", error);
+      alert("좋아요 처리에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setLikeSaving(false);
     }
   };
 
@@ -273,17 +322,22 @@ export default function PostDetail() {
 
             {/* Stats */}
             <Box sx={{ display: "flex", gap: 2.5, mb: 2.5 }}>
-              <Box
-                sx={{ display: "flex", alignItems: "center", gap: 0.75, cursor: "pointer" }}
-                onClick={() => setLiked(!liked)}
-              >
-                {liked ? (
-                  <Favorite sx={{ fontSize: 18, color: "primary.main" }} />
-                ) : (
-                  <FavoriteBorder sx={{ fontSize: 18, color: "#666" }} />
-                )}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <IconButton
+                  size="small"
+                  aria-label={liked ? "좋아요 취소" : "좋아요"}
+                  disabled={likeSaving}
+                  onClick={handleLike}
+                  sx={{ p: 0.5, color: liked ? "primary.main" : "#666" }}
+                >
+                  {liked ? (
+                    <Favorite sx={{ fontSize: 18 }} />
+                  ) : (
+                    <FavoriteBorder sx={{ fontSize: 18 }} />
+                  )}
+                </IconButton>
                 <Typography variant="body2" color={liked ? "primary.main" : "text.primary"}>
-                  좋아요 {post.likes + (liked ? 1 : 0)}개
+                  좋아요 {likeCount}개
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
