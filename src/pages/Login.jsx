@@ -41,7 +41,6 @@ export default function Login() {
         }
       }
 
-      console.log("Google 로그인 사용자:", user);
       navigate("/");
     } catch (error) {
       console.error("Google 로그인 오류:", error);

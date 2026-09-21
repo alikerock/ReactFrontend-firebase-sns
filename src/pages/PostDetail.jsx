@@ -206,7 +206,7 @@ export default function PostDetail() {
 
     try {
       const displayName = user.displayName || user.email || "익명";
-      const commentRef = await addDoc(collection(db, "comments"), {
+      await addDoc(collection(db, "comments"), {
         postId,
         uid: user.uid,
         displayName,
@@ -215,7 +215,6 @@ export default function PostDetail() {
         createdAt: serverTimestamp(),
       });
 
-      console.log("댓글 등록 완료:", commentRef.id);
       setComment("");
       setSnackbarOpen(true);
     } catch (error) {

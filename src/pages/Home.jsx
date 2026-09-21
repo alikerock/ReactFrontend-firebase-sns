@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Box, Typography, Chip, Stack, Card, CardContent, Fab, Button } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -37,6 +37,12 @@ export default function Home() {
     (_, index) => firstPageInGroup + index,
   );
   const nextGroupPage = firstPageInGroup + PAGE_GROUP_SIZE;
+  const changePage = useCallback(
+    (page, replace = false) => {
+      setSearchParams(page === 1 ? {} : { page: String(page) }, { replace });
+    },
+    [setSearchParams],
+  );
 
   useEffect(() => {
     const postsQuery = query(collection(db, "posts"), orderBy("createdAt", "desc"));
@@ -92,7 +98,7 @@ export default function Home() {
     );
 
     return unsubscribe;
-  }, [currentPage]);
+  }, [changePage, currentPage, nextGroupPage]);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -115,10 +121,6 @@ export default function Home() {
 
     return unsubscribe;
   }, []);
-
-  const changePage = (page, replace = false) => {
-    setSearchParams(page === 1 ? {} : { page: String(page) }, { replace });
-  };
 
   const postsWithCommentCounts = posts.map(post => ({
     ...post,
