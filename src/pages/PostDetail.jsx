@@ -17,7 +17,14 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
-import { Favorite, FavoriteBorder, ChatBubbleOutlineRounded, Share } from "@mui/icons-material";
+import {
+  Favorite,
+  FavoriteBorder,
+  Bookmark,
+  BookmarkBorder,
+  ChatBubbleOutlineRounded,
+  Share,
+} from "@mui/icons-material";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   addDoc,
@@ -52,6 +59,7 @@ export default function PostDetail() {
   const [post, setPost] = useState(null);
   const [likeCount, setLikeCount] = useState(0);
   const [liked, setLiked] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,6 +67,7 @@ export default function PostDetail() {
   const [commentsError, setCommentsError] = useState("");
   const [commentSaving, setCommentSaving] = useState(false);
   const [likeSaving, setLikeSaving] = useState(false);
+  const [bookmarkSaving, setBookmarkSaving] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
   const [commentDeleting, setCommentDeleting] = useState(false);
   const [feedback, setFeedback] = useState({ message: "", severity: "error" });
@@ -143,6 +152,20 @@ export default function PostDetail() {
       error => {
         console.error("좋아요 조회 실패:", error);
       },
+    );
+
+    return unsubscribe;
+  }, [postId, user?.uid]);
+
+  useEffect(() => {
+    setBookmarked(false);
+    if (!postId || !user?.uid) return undefined;
+
+    const bookmarkRef = doc(db, "posts", postId, "bookmarks", user.uid);
+    const unsubscribe = onSnapshot(
+      bookmarkRef,
+      snapshot => setBookmarked(snapshot.exists()),
+      error => console.error("북마크 조회 실패:", error),
     );
 
     return unsubscribe;
@@ -256,6 +279,35 @@ export default function PostDetail() {
       });
     } finally {
       setLikeSaving(false);
+    }
+  };
+
+  const handleBookmark = async () => {
+    if (!user) {
+      setFeedback({ message: "로그인한 사용자만 북마크할 수 있습니다.", severity: "warning" });
+      return;
+    }
+
+    const bookmarkRef = doc(db, "posts", postId, "bookmarks", user.uid);
+    const nextBookmarked = !bookmarked;
+    setBookmarkSaving(true);
+    setBookmarked(nextBookmarked);
+
+    try {
+      if (nextBookmarked) {
+        await setDoc(bookmarkRef, { uid: user.uid, createdAt: serverTimestamp() });
+      } else {
+        await deleteDoc(bookmarkRef);
+      }
+    } catch (error) {
+      setBookmarked(!nextBookmarked);
+      console.error("북마크 처리 실패:", error);
+      setFeedback({
+        message: "북마크 처리에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        severity: "error",
+      });
+    } finally {
+      setBookmarkSaving(false);
     }
   };
 
@@ -383,6 +435,19 @@ export default function PostDetail() {
                 <ChatBubbleOutlineRounded sx={{ fontSize: 18, color: "#666" }} />
                 <Typography variant="body2">댓글 {comments.length}개</Typography>
               </Box>
+              <IconButton
+                size="small"
+                aria-label={bookmarked ? "북마크 해제" : "북마크"}
+                disabled={bookmarkSaving}
+                onClick={handleBookmark}
+                sx={{ p: 0.5, color: bookmarked ? "primary.main" : "#666" }}
+              >
+                {bookmarked ? (
+                  <Bookmark sx={{ fontSize: 18 }} />
+                ) : (
+                  <BookmarkBorder sx={{ fontSize: 18 }} />
+                )}
+              </IconButton>
             </Box>
 
             <Divider sx={{ mb: 2.5 }} />

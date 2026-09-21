@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Box, Typography, Chip, Stack, Card, CardContent, Fab, Button } from "@mui/material";
 import { Add } from "@mui/icons-material";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "../../firebase";
 import PostCard from "../components/PostCard";
@@ -22,20 +22,15 @@ const getInitials = (name = "") => {
 
 export default function Home() {
   const navigate = useNavigate();
+  const { searchTerm } = useOutletContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTopic, setActiveTopic] = useState("전체");
   const [posts, setPosts] = useState([]);
   const [commentCounts, setCommentCounts] = useState({});
-  const [totalPages, setTotalPages] = useState(1);
-  const [hasNextPage, setHasNextPage] = useState(false);
 
   const pageParam = Number(searchParams.get("page"));
   const currentPage = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1;
   const firstPageInGroup = Math.floor((currentPage - 1) / PAGE_GROUP_SIZE) * PAGE_GROUP_SIZE + 1;
-  const pageNumbers = Array.from(
-    { length: Math.min(PAGE_GROUP_SIZE, Math.max(totalPages - firstPageInGroup + 1, 0)) },
-    (_, index) => firstPageInGroup + index,
-  );
   const nextGroupPage = firstPageInGroup + PAGE_GROUP_SIZE;
   const changePage = useCallback(
     (page, replace = false) => {
@@ -49,16 +44,7 @@ export default function Home() {
     const unsubscribe = onSnapshot(
       postsQuery,
       snapshot => {
-        const calculatedTotalPages = Math.max(1, Math.ceil(snapshot.size / PAGE_SIZE));
-
-        if (currentPage > calculatedTotalPages) {
-          changePage(calculatedTotalPages, true);
-          return;
-        }
-
-        const firstPostIndex = (currentPage - 1) * PAGE_SIZE;
-        const visibleDocs = snapshot.docs.slice(firstPostIndex, firstPostIndex + PAGE_SIZE);
-        const postList = visibleDocs.map(doc => {
+        const postList = snapshot.docs.map(doc => {
           const data = doc.data();
           const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date();
 
@@ -87,18 +73,15 @@ export default function Home() {
         });
 
         setPosts(postList);
-        setTotalPages(calculatedTotalPages);
-        setHasNextPage(nextGroupPage <= calculatedTotalPages);
       },
       error => {
         console.error("게시글 조회 실패:", error);
         setPosts([]);
-        setHasNextPage(false);
       },
     );
 
     return unsubscribe;
-  }, [changePage, currentPage, nextGroupPage]);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -126,10 +109,35 @@ export default function Home() {
     ...post,
     commentCount: commentCounts[post.id],
   }));
-  const filtered =
-    activeTopic === "전체"
-      ? postsWithCommentCounts
-      : postsWithCommentCounts.filter(p => p.topic === activeTopic);
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+  const filtered = postsWithCommentCounts.filter(post => {
+    const matchesTopic = activeTopic === "전체" || post.topic === activeTopic;
+    const matchesSearch =
+      !normalizedSearchTerm ||
+      post.title.toLowerCase().includes(normalizedSearchTerm) ||
+      post.content.toLowerCase().includes(normalizedSearchTerm);
+
+    return matchesTopic && matchesSearch;
+  });
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageNumbers = Array.from(
+    { length: Math.min(PAGE_GROUP_SIZE, Math.max(totalPages - firstPageInGroup + 1, 0)) },
+    (_, index) => firstPageInGroup + index,
+  );
+  const visiblePosts = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const hasNextPage = nextGroupPage <= totalPages;
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      changePage(totalPages, true);
+    }
+  }, [changePage, currentPage, totalPages]);
+
+  useEffect(() => {
+    if (currentPage !== 1) {
+      changePage(1, true);
+    }
+  }, [changePage, currentPage, searchTerm]);
 
   return (
     <Box sx={{ display: "flex", flex: 1 }}>
@@ -149,7 +157,13 @@ export default function Home() {
               sx={{
                 height: 32,
                 bgcolor: activeTopic === t ? "primary.main" : "white",
-                color: activeTopic === t ? "white" : "text.primary",
+                color:
+                  activeTopic === t
+                    ? "primary.contrastText"
+                    : theme =>
+                        theme.palette.mode === "dark"
+                          ? theme.palette.grey[900]
+                          : theme.palette.text.primary,
                 fontWeight: activeTopic === t ? 700 : 500,
                 border: "1px solid",
                 borderColor: activeTopic === t ? "primary.main" : "#e0e0e0",
@@ -160,11 +174,17 @@ export default function Home() {
         </Stack>
 
         {/* Posts */}
-        <Stack spacing={3}>
-          {filtered.map(post => (
-            <PostCard key={post.id} post={post} />
-          ))}
-        </Stack>
+        {visiblePosts.length > 0 ? (
+          <Stack spacing={3}>
+            {visiblePosts.map(post => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </Stack>
+        ) : (
+          <Typography color="text.secondary">
+            {normalizedSearchTerm ? "검색 결과가 없습니다." : "게시글이 없습니다."}
+          </Typography>
+        )}
 
         <Stack direction="row" justifyContent="center" spacing={2} sx={{ mt: 4 }}>
           <Button

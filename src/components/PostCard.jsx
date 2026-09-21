@@ -17,6 +17,8 @@ import {
 import {
   Favorite,
   FavoriteBorder,
+  Bookmark,
+  BookmarkBorder,
   ChatBubbleOutlineRounded,
   EditOutlined,
   DeleteOutlineRounded,
@@ -40,6 +42,8 @@ export default function PostCard({ post }) {
   const [likeCount, setLikeCount] = useState(Number(post.likes || 0));
   const [liked, setLiked] = useState(false);
   const [likeSaving, setLikeSaving] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
+  const [bookmarkSaving, setBookmarkSaving] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [feedback, setFeedback] = useState({ message: "", severity: "error" });
@@ -57,6 +61,20 @@ export default function PostCard({ post }) {
       error => {
         console.error("좋아요 조회 실패:", error);
       },
+    );
+
+    return unsubscribe;
+  }, [post.id, user?.uid]);
+
+  useEffect(() => {
+    setBookmarked(false);
+    if (!user?.uid) return undefined;
+
+    const bookmarkRef = doc(db, "posts", post.id, "bookmarks", user.uid);
+    const unsubscribe = onSnapshot(
+      bookmarkRef,
+      snapshot => setBookmarked(snapshot.exists()),
+      error => console.error("북마크 조회 실패:", error),
     );
 
     return unsubscribe;
@@ -92,6 +110,36 @@ export default function PostCard({ post }) {
       });
     } finally {
       setLikeSaving(false);
+    }
+  };
+
+  const handleBookmark = async e => {
+    e.stopPropagation();
+    if (!user) {
+      setFeedback({ message: "로그인한 사용자만 북마크할 수 있습니다.", severity: "warning" });
+      return;
+    }
+
+    const bookmarkRef = doc(db, "posts", post.id, "bookmarks", user.uid);
+    const nextBookmarked = !bookmarked;
+    setBookmarkSaving(true);
+    setBookmarked(nextBookmarked);
+
+    try {
+      if (nextBookmarked) {
+        await setDoc(bookmarkRef, { uid: user.uid, createdAt: serverTimestamp() });
+      } else {
+        await deleteDoc(bookmarkRef);
+      }
+    } catch (error) {
+      setBookmarked(!nextBookmarked);
+      console.error("북마크 처리 실패:", error);
+      setFeedback({
+        message: "북마크 처리에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        severity: "error",
+      });
+    } finally {
+      setBookmarkSaving(false);
     }
   };
 
@@ -251,6 +299,19 @@ export default function PostCard({ post }) {
                 댓글 {post.commentCount ?? post.comments.length}개
               </Typography>
             </Box>
+            <IconButton
+              size="small"
+              aria-label={bookmarked ? "북마크 해제" : "북마크"}
+              disabled={bookmarkSaving}
+              onClick={handleBookmark}
+              sx={{ p: 0.5, color: bookmarked ? "primary.main" : "#666" }}
+            >
+              {bookmarked ? (
+                <Bookmark sx={{ fontSize: 18 }} />
+              ) : (
+                <BookmarkBorder sx={{ fontSize: 18 }} />
+              )}
+            </IconButton>
           </Box>
 
           {isOwner && (

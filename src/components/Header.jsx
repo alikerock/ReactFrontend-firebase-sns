@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -9,16 +8,25 @@ import {
   Box,
   Button,
   useMediaQuery,
+  Tooltip,
 } from "@mui/material";
-import { Terminal, Search, NotificationsNone, Menu as MenuIcon } from "@mui/icons-material";
+import {
+  Terminal,
+  Search,
+  NotificationsNone,
+  Menu as MenuIcon,
+  LightMode,
+  DarkMode,
+} from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useThemeMode } from "../contexts/ThemeContext";
 
-export default function Header({ onMenuClick }) {
+export default function Header({ onMenuClick, searchTerm, onSearchChange }) {
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
   const isMobile = useMediaQuery(theme => theme.breakpoints.down("md"));
   const { user, loading } = useAuth();
+  const { mode, toggleTheme } = useThemeMode();
 
   const initials = (user?.displayName || user?.email || "U").charAt(0).toUpperCase();
 
@@ -71,8 +79,8 @@ export default function Header({ onMenuClick }) {
         >
           <Search sx={{ fontSize: 18, opacity: 0.7 }} />
           <InputBase
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+            value={searchTerm}
+            onChange={e => onSearchChange(e.target.value)}
             placeholder="게시글, 주제, 작성자 검색..."
             sx={{ color: "rgba(255,255,255,0.85)", fontSize: 14, flex: 1 }}
             inputProps={{ "aria-label": "검색" }}
@@ -81,6 +89,11 @@ export default function Header({ onMenuClick }) {
 
         {/* Actions */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Tooltip title={mode === "light" ? "다크 모드" : "라이트 모드"}>
+            <IconButton color="inherit" size="small" onClick={toggleTheme} aria-label="테마 전환">
+              {mode === "light" ? <DarkMode /> : <LightMode />}
+            </IconButton>
+          </Tooltip>
           <IconButton color="inherit" size="small">
             <NotificationsNone />
           </IconButton>
@@ -89,8 +102,9 @@ export default function Header({ onMenuClick }) {
               sx={{
                 width: 36,
                 height: 36,
-                bgcolor: "#e0e0e0",
-                color: "#666",
+                bgcolor: theme => (theme.palette.mode === "dark" ? "#90caf9" : "#e0e0e0"),
+                color: theme => (theme.palette.mode === "dark" ? "#0d47a1" : "#424242"),
+                border: "2px solid rgba(255,255,255,0.7)",
                 fontSize: 14,
                 fontWeight: 700,
                 cursor: "pointer",
