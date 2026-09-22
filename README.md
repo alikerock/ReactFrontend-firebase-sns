@@ -121,12 +121,21 @@ SNS 기능 구현
 | 14차시 | 게시글 이미지 출력·교체·삭제하기             | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/esson-14)  |
 | 15차시 | 프로필과 내 게시글 구현                      | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/esson-15)  |
 | 16차시 | 댓글 작성·삭제 및 실시간 반영                | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/esson-16)  |
-| 17차시 | 토글과 개수 표시로 좋아요 구현하기           | Release 준비                                                                                      |
-| 18차시 | Firebase 보안 규칙과 사용자 경험 개선        | Release 준비                                                                                      |
-| 19차시 | 배포·리팩토링 및 포트폴리오 정리             | Release 준비                                                                                      |
-| 20차시 | GitHub Copilot과 함께 SNS 기능 확장하기      | Release 준비                                                                                      |
+| 17차시 | 토글과 개수 표시로 좋아요 구현하기           | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/esson-17)  |
+| 18차시 | Firebase 보안 규칙과 사용자 경험 개선        | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/esson-18)  |
+| 19차시 | 배포·리팩토링 및 포트폴리오 정리             | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/esson-19)  |
+| 20차시 | GitHub Copilot과 함께 SNS 기능 확장하기      | [📖 설명 및 소스](https://github.com/alikerock/ReactFrontend-firebase-sns/releases/tag/esson-20)  |
 
 ---
+
+### 후속 수정
+
+20차시 Release 이후 페이지네이션 동작을 점검하면서
+검색어 변경 시 페이지 상태를 처리하는 불필요한 로직을 정리했습니다.
+
+- 검색 및 페이지네이션 상태 처리 개선
+- 불필요한 페이지 초기화 코드 제거
+- 최종 수정본은 `main` 브랜치에서 확인 가능
 
 # 🧭 프로젝트 개발 흐름
 
