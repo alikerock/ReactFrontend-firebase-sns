@@ -133,12 +133,6 @@ export default function Home() {
     }
   }, [changePage, currentPage, totalPages]);
 
-  useEffect(() => {
-    if (currentPage !== 1) {
-      changePage(1, true);
-    }
-  }, [changePage, currentPage, searchTerm]);
-
   return (
     <Box sx={{ display: "flex", flex: 1 }}>
       {/* Center feed */}
